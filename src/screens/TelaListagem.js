@@ -8,7 +8,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
+  useWindowDimensions,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { listarFilmes } from '../database/storage';
 import CardFilme from '../components/CardFilme';
@@ -25,6 +28,13 @@ function filtrarFilmes(lista, filtroAtivo) {
 export default function TelaListagem({ navigation }) {
   const [listaFilmes, setListaFilmes] = useState([]);
   const [filtroAtivo, setFiltroAtivo] = useState('Todos');
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+
+  // Calcula valores responsivos baseado no tamanho da tela
+  const isSmallScreen = width < 380;
+  const isLargeScreen = width > 500;
+  const isLandscape = height < width;
 
   // useFocusEffect garante recarregamento sempre que a tela ganhar foco
   // (ao voltar do formulário ou da tela de detalhes)
@@ -43,13 +53,13 @@ export default function TelaListagem({ navigation }) {
   function renderVazio() {
     return (
       <View style={styles.vazio}>
-        <Text style={styles.vazioCicone}>🎬</Text>
-        <Text style={styles.vazioTitulo}>
+        <Text style={[styles.vazioCicone, { fontSize: isSmallScreen ? 40 : 52 }]}>🎬</Text>
+        <Text style={[styles.vazioTitulo, { fontSize: isSmallScreen ? 15 : 17 }]}>
           {filtroAtivo === 'Todos'
             ? 'Nenhum título ainda'
             : `Nenhum título "${filtroAtivo}"`}
         </Text>
-        <Text style={styles.vazioSub}>
+        <Text style={[styles.vazioSub, { fontSize: isSmallScreen ? 12 : 14 }]}>
           {filtroAtivo === 'Todos'
             ? 'Toque no + para adicionar seu primeiro filme ou série'
             : 'Tente outro filtro ou adicione novos títulos'}
@@ -58,15 +68,23 @@ export default function TelaListagem({ navigation }) {
     );
   }
 
+  // Calcula o padding do FAB baseado na orientação e safe area
+  const fabBottom = Math.max(insets.bottom + 20, 28);
+  const fabRight = isSmallScreen ? 16 : 20;
+  const fabSize = isSmallScreen ? 48 : 56;
+
+  // Calcula o padding da lista para não sobrepor o FAB
+  const listaPaddingBottom = Math.max(fabSize + 40, 90);
+
   return (
     <SafeAreaView style={styles.safe}>
       {/* CABEÇALHO */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
         <View>
-          <Text style={styles.titulo}>
+          <Text style={[styles.titulo, { fontSize: isSmallScreen ? 22 : isLargeScreen ? 30 : 26 }]}>
             Cine<Text style={styles.tituloAcento}>Log</Text>
           </Text>
-          <Text style={styles.subtitulo}>
+          <Text style={[styles.subtitulo, { fontSize: isSmallScreen ? 11 : 12 }]}>
             {listaFilmes.length} título{listaFilmes.length !== 1 ? 's' : ''} · {listaFiltrada.length} exibido{listaFiltrada.length !== 1 ? 's' : ''}
           </Text>
         </View>
@@ -77,7 +95,8 @@ export default function TelaListagem({ navigation }) {
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.filtrosScroll}
-        contentContainerStyle={styles.filtrosContainer}
+        contentContainerStyle={[styles.filtrosContainer, { paddingHorizontal: isSmallScreen ? 12 : 16 }]}
+        scrollEventThrottle={16}
       >
         {FILTROS.map(f => (
           <BotaoFiltro
@@ -100,17 +119,36 @@ export default function TelaListagem({ navigation }) {
           />
         )}
         ListEmptyComponent={renderVazio}
-        contentContainerStyle={styles.lista}
+        contentContainerStyle={[
+          styles.lista,
+          {
+            paddingHorizontal: isSmallScreen ? 8 : 12,
+            paddingBottom: Math.max(insets.bottom + listaPaddingBottom, listaPaddingBottom),
+          },
+        ]}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
       />
 
       {/* FAB — botão flutuante para adicionar */}
       <TouchableOpacity
-        style={styles.fab}
+        style={[
+          styles.fab,
+          {
+            bottom: fabBottom,
+            right: fabRight,
+            width: fabSize,
+            height: fabSize,
+            borderRadius: fabSize / 2,
+          },
+        ]}
         onPress={() => navigation.navigate('TelaFormulario', { item: null })}
         activeOpacity={0.85}
       >
-        <Text style={styles.fabIcone}>+</Text>
+        <Text style={[styles.fabIcone, { fontSize: isSmallScreen ? 24 : 30 }]}>+</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -123,24 +161,23 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
     paddingBottom: 12,
     borderBottomWidth: 0.5,
     borderBottomColor: '#2A2A33',
   },
   titulo: {
-    fontSize: 26,
     fontWeight: '800',
     color: '#F1F0F5',
     letterSpacing: -0.5,
+    lineHeight: 32,
   },
   tituloAcento: {
     color: '#C084FC',
   },
   subtitulo: {
-    fontSize: 12,
     color: '#8B8A9B',
     marginTop: 2,
+    lineHeight: 16,
   },
   filtrosScroll: {
     flexGrow: 0,
@@ -148,46 +185,37 @@ const styles = StyleSheet.create({
     borderBottomColor: '#2A2A33',
   },
   filtrosContainer: {
-    paddingHorizontal: 16,
     paddingVertical: 10,
   },
   lista: {
-    paddingHorizontal: 12,
     paddingTop: 10,
-    paddingBottom: 90,
     flexGrow: 1,
   },
   vazio: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 80,
-    paddingHorizontal: 32,
+    paddingVertical: 60,
+    paddingHorizontal: 24,
+    minHeight: 300,
   },
   vazioCicone: {
-    fontSize: 52,
     marginBottom: 16,
   },
   vazioTitulo: {
-    fontSize: 17,
     fontWeight: '700',
     color: '#F1F0F5',
     textAlign: 'center',
     marginBottom: 8,
+    lineHeight: 22,
   },
   vazioSub: {
-    fontSize: 14,
     color: '#8B8A9B',
     textAlign: 'center',
     lineHeight: 20,
   },
   fab: {
     position: 'absolute',
-    bottom: 28,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
     backgroundColor: '#A855F7',
     alignItems: 'center',
     justifyContent: 'center',
@@ -198,9 +226,8 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   fabIcone: {
-    fontSize: 30,
     color: '#FFFFFF',
-    lineHeight: 34,
     fontWeight: '300',
+    lineHeight: 34,
   },
 });

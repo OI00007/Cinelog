@@ -1,6 +1,6 @@
 // components/CampoTexto.js
 import React from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet, useWindowDimensions } from 'react-native';
 
 /**
  * Campo de texto reutilizável com label e mensagem de erro.
@@ -21,14 +21,21 @@ export default function CampoTexto({
   erro = '',
   obrigatorio = false,
 }) {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 380;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>
+      <Text style={[styles.label, { fontSize: isSmallScreen ? 11 : 12 }]}>
         {label}
         {obrigatorio && <Text style={styles.asterisco}> *</Text>}
       </Text>
       <TextInput
-        style={[styles.input, erro ? styles.inputErro : null]}
+        style={[
+          styles.input,
+          { fontSize: isSmallScreen ? 13 : 14, minHeight: isSmallScreen ? 40 : 44 },
+          erro ? styles.inputErro : null,
+        ]}
         value={valor}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -36,7 +43,7 @@ export default function CampoTexto({
         keyboardType={keyboardType}
         autoCapitalize="sentences"
       />
-      {!!erro && <Text style={styles.erro}>{erro}</Text>}
+      {!!erro && <Text style={[styles.erro, { fontSize: isSmallScreen ? 11 : 12 }]}>{erro}</Text>}
     </View>
   );
 }
@@ -46,12 +53,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 12,
     fontWeight: '700',
     color: '#8B8A9B',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginBottom: 6,
+    lineHeight: 16,
   },
   asterisco: {
     color: '#F87171',
@@ -63,15 +70,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 14,
     color: '#F1F0F5',
+    lineHeight: 18,
   },
   inputErro: {
     borderColor: '#F87171',
   },
   erro: {
-    fontSize: 12,
     color: '#F87171',
     marginTop: 4,
+    lineHeight: 16,
   },
 });
