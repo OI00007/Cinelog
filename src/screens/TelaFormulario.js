@@ -8,7 +8,10 @@ import {
   StyleSheet,
   SafeAreaView,
   Alert,
+  useWindowDimensions,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import { salvarFilme, editarFilme } from '../database/storage';
 import { criarFilme } from '../models/Filme';
@@ -20,6 +23,13 @@ const TIPOS = ['Filme', 'Série', 'Documentário', 'Anime'];
 export default function TelaFormulario({ route, navigation }) {
   const itemExistente = route.params?.item ?? null;
   const modoEdicao = !!itemExistente;
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+
+  // Calcula valores responsivos
+  const isSmallScreen = width < 380;
+  const isLargeScreen = width > 500;
+  const isLandscape = height < width;
 
   // Estado de cada campo do formulário
   const [titulo, setTitulo] = useState(itemExistente?.titulo ?? '');
@@ -76,7 +86,6 @@ export default function TelaFormulario({ route, navigation }) {
         status,
       };
       await editarFilme(atualizado);
-      // Navega para detalhes com dados atualizados
       navigation.navigate('TelaDetalhes', { item: atualizado });
     } else {
       const novo = criarFilme(titulo.trim(), genero.trim(), ano ? parseInt(ano) : null, tipo, nota, status);
@@ -93,23 +102,36 @@ export default function TelaFormulario({ route, navigation }) {
     }
   }
 
+  // Valores responsivos para tamanho de fonte
+  const fontSizeTitle = isSmallScreen ? 14 : 16;
+  const fontSizeLabel = isSmallScreen ? 11 : 12;
+  const fontSizeInput = isSmallScreen ? 13 : 14;
+  const estrelasTamanho = isSmallScreen ? 28 : 32;
+
   return (
     <SafeAreaView style={styles.safe}>
       {/* TOPBAR */}
-      <View style={styles.topbar}>
+      <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 12) }]}>
         <TouchableOpacity onPress={handleCancelar} style={styles.voltarBtn}>
-          <Text style={styles.voltarTexto}>← Cancelar</Text>
+          <Text style={[styles.voltarTexto, { fontSize: fontSizeTitle }]}>Cancelar</Text>
         </TouchableOpacity>
-        <Text style={styles.topbarTitulo}>
+        <Text style={[styles.topbarTitulo, { fontSize: fontSizeTitle }]}>
           {modoEdicao ? 'Editar título' : 'Novo título'}
         </Text>
         <View style={{ width: 80 }} />
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[
+          styles.scroll,
+          {
+            paddingBottom: Math.max(insets.bottom + 24, 48),
+            paddingHorizontal: isSmallScreen ? 12 : 16,
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
       >
         {/* CAMPOS DE TEXTO */}
         <CampoTexto
@@ -130,7 +152,8 @@ export default function TelaFormulario({ route, navigation }) {
           obrigatorio
         />
 
-        <View style={styles.linha2}>
+        {/* LINHA 2: ANO E TIPO */}
+        <View style={[styles.linha2, { gap: isSmallScreen ? 8 : 12 }]}>
           <View style={styles.metade}>
             <CampoTexto
               label="Ano"
@@ -142,14 +165,14 @@ export default function TelaFormulario({ route, navigation }) {
           </View>
           <View style={styles.metade}>
             {/* Seletor de tipo */}
-            <Text style={styles.label}>Tipo</Text>
-            <View style={styles.pickerWrapper}>
+            <Text style={[styles.label, { fontSize: fontSizeLabel }]}>Tipo</Text>
+            <View style={[styles.pickerWrapper, { minHeight: isSmallScreen ? 48 : 52 }]}>
               <Picker
                 selectedValue={tipo}
                 onValueChange={setTipo}
-                style={styles.picker}
+                style={[styles.picker, { height: isSmallScreen ? 48 : 52 }]}
                 dropdownIconColor="#8B8A9B"
-                itemStyle={{ color: '#F1F0F5', fontSize: 14 }}
+                itemStyle={{ color: '#F1F0F5', fontSize: fontSizeInput }}
               >
                 {TIPOS.map(t => (
                   <Picker.Item key={t} label={t} value={t} color="#F1F0F5" />
@@ -160,50 +183,62 @@ export default function TelaFormulario({ route, navigation }) {
         </View>
 
         {/* NOTA */}
-        <View style={styles.campo}>
-          <Text style={styles.label}>Nota</Text>
+        <View style={[styles.campo, { minHeight: isSmallScreen ? 80 : 90 }]}>
+          <Text style={[styles.label, { fontSize: fontSizeLabel }]}>Nota</Text>
           <AvaliacaoEstrelas
             nota={nota}
             editavel
             onSelect={setNota}
-            tamanho={32}
+            tamanho={estrelasTamanho}
           />
-          <Text style={styles.notaHint}>
+          <Text style={[styles.notaHint, { fontSize: fontSizeLabel }]}>
             {nota === 0 ? 'Toque para avaliar' : `${nota} de 5 estrelas`}
           </Text>
         </View>
 
         {/* STATUS */}
         <View style={styles.campo}>
-          <Text style={styles.label}>
+          <Text style={[styles.label, { fontSize: fontSizeLabel }]}>
             Status <Text style={{ color: '#F87171' }}>*</Text>
           </Text>
-          <View style={styles.statusRow}>
+          <View style={[styles.statusRow, { gap: isSmallScreen ? 8 : 10 }]}>
             <TouchableOpacity
-              style={[styles.statusOpt, status === 'Assistido' && styles.statusAssistido]}
+              style={[
+                styles.statusOpt,
+                { minHeight: isSmallScreen ? 40 : 44 },
+                status === 'Assistido' && styles.statusAssistido,
+              ]}
               onPress={() => { setStatus(status === 'Assistido' ? '' : 'Assistido'); setErroStatus(''); }}
               activeOpacity={0.8}
             >
-              <Text style={[styles.statusTexto, status === 'Assistido' && styles.statusTextoAssistido]}>
+              <Text style={[styles.statusTexto, { fontSize: fontSizeInput }, status === 'Assistido' && styles.statusTextoAssistido]}>
                 ✓  Assistido
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.statusOpt, status === 'Quero ver' && styles.statusQuero]}
+              style={[
+                styles.statusOpt,
+                { minHeight: isSmallScreen ? 40 : 44 },
+                status === 'Quero ver' && styles.statusQuero,
+              ]}
               onPress={() => { setStatus(status === 'Quero ver' ? '' : 'Quero ver'); setErroStatus(''); }}
               activeOpacity={0.8}
             >
-              <Text style={[styles.statusTexto, status === 'Quero ver' && styles.statusTextoQuero]}>
+              <Text style={[styles.statusTexto, { fontSize: fontSizeInput }, status === 'Quero ver' && styles.statusTextoQuero]}>
                 ♥  Quero ver
               </Text>
             </TouchableOpacity>
           </View>
-          {!!erroStatus && <Text style={styles.erro}>{erroStatus}</Text>}
+          {!!erroStatus && <Text style={[styles.erro, { fontSize: fontSizeLabel }]}>{erroStatus}</Text>}
         </View>
 
         {/* BOTÃO SALVAR */}
-        <TouchableOpacity style={styles.btnSalvar} onPress={handleSalvar} activeOpacity={0.85}>
-          <Text style={styles.btnSalvarTexto}>
+        <TouchableOpacity
+          style={[styles.btnSalvar, { minHeight: isSmallScreen ? 44 : 48 }]}
+          onPress={handleSalvar}
+          activeOpacity={0.85}
+        >
+          <Text style={[styles.btnSalvarTexto, { fontSize: isSmallScreen ? 14 : 16 }]}>
             {modoEdicao ? 'Salvar alterações' : 'Adicionar à lista'}
           </Text>
         </TouchableOpacity>
@@ -222,44 +257,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     borderBottomWidth: 0.5,
     borderBottomColor: '#2A2A33',
   },
   voltarBtn: {
     width: 80,
+    paddingVertical: 8,
+    justifyContent: 'center',
   },
   voltarTexto: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#C084FC',
+    lineHeight: 18,
   },
   topbarTitulo: {
-    fontSize: 16,
     fontWeight: '700',
     color: '#F1F0F5',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 8,
+    lineHeight: 20,
   },
   scroll: {
-    padding: 16,
-    paddingBottom: 48,
+    paddingTop: 16,
+    flexGrow: 1,
   },
   linha2: {
     flexDirection: 'row',
-    gap: 12,
+    marginBottom: 4,
   },
   metade: {
     flex: 1,
+    minWidth: 0,
   },
   campo: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   label: {
-    fontSize: 12,
     fontWeight: '700',
     color: '#8B8A9B',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
-    marginBottom: 8,
+    marginBottom: 10,
+    lineHeight: 16,
   },
   pickerWrapper: {
     backgroundColor: '#16161A',
@@ -267,22 +308,22 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A33',
     borderRadius: 12,
     overflow: 'hidden',
-    height: 46,
     justifyContent: 'center',
   },
   picker: {
     color: '#F1F0F5',
     backgroundColor: 'transparent',
-    marginTop: -6,
+    marginTop: 0,
   },
   notaHint: {
-    fontSize: 12,
     color: '#8B8A9B',
-    marginTop: 6,
+    marginTop: 10,
+    marginBottom: 4,
+    lineHeight: 16,
   },
   statusRow: {
     flexDirection: 'row',
-    gap: 10,
+    marginBottom: 8,
   },
   statusOpt: {
     flex: 1,
@@ -291,6 +332,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2A2A33',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   statusAssistido: {
     borderColor: '#34D399',
@@ -301,31 +343,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#2A2030',
   },
   statusTexto: {
-    fontSize: 13,
     fontWeight: '600',
     color: '#8B8A9B',
+    flexWrap: 'wrap',
+    lineHeight: 18,
   },
   statusTextoAssistido: {
     color: '#34D399',
+    flexWrap: 'wrap',
   },
   statusTextoQuero: {
     color: '#C084FC',
+    flexWrap: 'wrap',
   },
   erro: {
-    fontSize: 12,
     color: '#F87171',
-    marginTop: 6,
+    marginTop: 8,
+    lineHeight: 16,
   },
   btnSalvar: {
     backgroundColor: '#A855F7',
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 8,
   },
   btnSalvarTexto: {
-    fontSize: 16,
     fontWeight: '800',
     color: '#FFFFFF',
+    lineHeight: 20,
   },
 });
