@@ -8,9 +8,8 @@ import {
   StyleSheet,
   SafeAreaView,
   Alert,
-  useWindowDimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Picker } from '@react-native-picker/picker';
 import { salvarFilme, editarFilme } from '../database/storage';
 import { criarFilme } from '../models/Filme';
 import CampoTexto from '../components/CampoTexto';
@@ -21,11 +20,6 @@ const TIPOS = ['Filme', 'Série', 'Doc', 'Anime'];
 export default function TelaFormulario({ route, navigation }) {
   const itemExistente = route.params?.item ?? null;
   const modoEdicao = !!itemExistente;
-  const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-
-  // Calcula valores responsivos
-  const isSmallScreen = width < 380;
 
   // Estado de cada campo do formulário
   const [titulo, setTitulo] = useState(itemExistente?.titulo ?? '');
@@ -89,15 +83,20 @@ export default function TelaFormulario({ route, navigation }) {
     }
   }
 
-  const fontSizeTitle = isSmallScreen ? 14 : 16;
-  const fontSizeLabel = isSmallScreen ? 11 : 12;
-  const fontSizeInput = isSmallScreen ? 13 : 14;
+  function handleCancelar() {
+    if (modoEdicao) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('TelaListagem');
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 12) }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.voltarBtn}>
-          <Text style={[styles.voltarTexto, { fontSize: fontSizeTitle }]}>Cancelar</Text>
+      {/* TOPBAR */}
+      <View style={styles.topbar}>
+        <TouchableOpacity onPress={handleCancelar} style={styles.voltarBtn}>
+          <Text style={styles.voltarTexto}>← Cancelar</Text>
         </TouchableOpacity>
         <Text style={[styles.topbarTitulo, { fontSize: fontSizeTitle }]}>
           {modoEdicao ? 'Editar título' : 'Novo título'}
@@ -115,6 +114,7 @@ export default function TelaFormulario({ route, navigation }) {
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
       >
         <CampoTexto
           label="Título"
@@ -134,7 +134,7 @@ export default function TelaFormulario({ route, navigation }) {
           obrigatorio
         />
 
-        <View style={[styles.linha2, { gap: isSmallScreen ? 8 : 12 }]}>
+        <View style={styles.linha2}>
           <View style={styles.metade}>
             <CampoTexto
               label="Ano"
@@ -145,31 +145,32 @@ export default function TelaFormulario({ route, navigation }) {
             />
           </View>
           <View style={styles.metade}>
-            <Text style={[styles.label, { fontSize: fontSizeLabel }]}>Tipo</Text>
-            <View style={[styles.tipoContainer, { height: isSmallScreen ? 44 : 48 }]}>
-              {TIPOS.map(t => (
-                <TouchableOpacity
-                  key={t}
-                  style={[styles.tipoItem, tipo === t && styles.tipoItemAtivo]}
-                  onPress={() => setTipo(t)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.tipoTexto, { fontSize: isSmallScreen ? 11 : 12 }, tipo === t && styles.tipoTextoAtivo]}>
-                    {t}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            {/* Seletor de tipo */}
+            <Text style={styles.label}>Tipo</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={tipo}
+                onValueChange={setTipo}
+                style={styles.picker}
+                dropdownIconColor="#8B8A9B"
+                itemStyle={{ color: '#F1F0F5', fontSize: 14 }}
+              >
+                {TIPOS.map(t => (
+                  <Picker.Item key={t} label={t} value={t} color="#F1F0F5" />
+                ))}
+              </Picker>
             </View>
           </View>
         </View>
 
-        <View style={[styles.campo, { marginTop: 8 }]}>
-          <Text style={[styles.label, { fontSize: fontSizeLabel }]}>Nota</Text>
+        {/* NOTA */}
+        <View style={styles.campo}>
+          <Text style={styles.label}>Nota</Text>
           <AvaliacaoEstrelas
             nota={nota}
             editavel
             onSelect={setNota}
-            tamanho={isSmallScreen ? 28 : 32}
+            tamanho={32}
           />
           <Text style={[styles.notaHint, { fontSize: fontSizeLabel }]}>
             {nota === 0 ? 'Toque para avaliar' : `${nota} de 5 estrelas`}
@@ -182,12 +183,8 @@ export default function TelaFormulario({ route, navigation }) {
           </Text>
           <View style={[styles.statusRow, { gap: isSmallScreen ? 8 : 10 }]}>
             <TouchableOpacity
-              style={[
-                styles.statusOpt,
-                { minHeight: isSmallScreen ? 40 : 44 },
-                status === 'Assistido' && styles.statusAssistido
-              ]}
-              onPress={() => { setStatus('Assistido'); setErroStatus(''); }}
+              style={[styles.statusOpt, status === 'Assistido' && styles.statusAssistido]}
+              onPress={() => { setStatus(status === 'Assistido' ? '' : 'Assistido'); setErroStatus(''); }}
               activeOpacity={0.8}
             >
               <Text style={[styles.statusTexto, { fontSize: fontSizeInput }, status === 'Assistido' && styles.statusTextoAssistido]}>
@@ -195,12 +192,8 @@ export default function TelaFormulario({ route, navigation }) {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                styles.statusOpt,
-                { minHeight: isSmallScreen ? 40 : 44 },
-                status === 'Quero ver' && styles.statusQuero
-              ]}
-              onPress={() => { setStatus('Quero ver'); setErroStatus(''); }}
+              style={[styles.statusOpt, status === 'Quero ver' && styles.statusQuero]}
+              onPress={() => { setStatus(status === 'Quero ver' ? '' : 'Quero ver'); setErroStatus(''); }}
               activeOpacity={0.8}
             >
               <Text style={[styles.statusTexto, { fontSize: fontSizeInput }, status === 'Quero ver' && styles.statusTextoQuero]}>
@@ -211,12 +204,9 @@ export default function TelaFormulario({ route, navigation }) {
           {!!erroStatus && <Text style={[styles.erro, { fontSize: fontSizeLabel }]}>{erroStatus}</Text>}
         </View>
 
-        <TouchableOpacity
-          style={[styles.btnSalvar, { minHeight: isSmallScreen ? 44 : 48 }]}
-          onPress={handleSalvar}
-          activeOpacity={0.85}
-        >
-          <Text style={[styles.btnSalvarTexto, { fontSize: isSmallScreen ? 14 : 16 }]}>
+        {/* BOTÃO SALVAR */}
+        <TouchableOpacity style={styles.btnSalvar} onPress={handleSalvar} activeOpacity={0.85}>
+          <Text style={styles.btnSalvarTexto}>
             {modoEdicao ? 'Salvar alterações' : 'Adicionar à lista'}
           </Text>
         </TouchableOpacity>
@@ -241,17 +231,15 @@ const styles = StyleSheet.create({
   },
   voltarBtn: {
     width: 80,
-    paddingVertical: 8,
   },
   voltarTexto: {
     fontWeight: '600',
     color: '#C084FC',
+    lineHeight: 18,
   },
   topbarTitulo: {
     fontWeight: '700',
     color: '#F1F0F5',
-    flex: 1,
-    textAlign: 'center',
   },
   scroll: {
     paddingTop: 16,
@@ -259,17 +247,21 @@ const styles = StyleSheet.create({
   },
   linha2: {
     flexDirection: 'row',
-    marginBottom: 16,
+    gap: 12,
   },
   metade: {
     flex: 1,
+    minWidth: 0,
+  },
+  campo: {
+    marginBottom: 16,
   },
   label: {
     fontWeight: '700',
     color: '#8B8A9B',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   tipoContainer: {
     flexDirection: 'row',
@@ -277,10 +269,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#2A2A33',
-    padding: 3,
-  },
-  tipoItem: {
-    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    height: 46,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 9,
@@ -296,16 +287,16 @@ const styles = StyleSheet.create({
   },
   tipoTextoAtivo: {
     color: '#F1F0F5',
-  },
-  campo: {
-    marginBottom: 20,
+    backgroundColor: 'transparent',
+    marginTop: -6,
   },
   notaHint: {
     color: '#8B8A9B',
-    marginTop: 10,
+    marginTop: 6,
   },
   statusRow: {
     flexDirection: 'row',
+    gap: 10,
   },
   statusOpt: {
     flex: 1,
@@ -326,16 +317,20 @@ const styles = StyleSheet.create({
   statusTexto: {
     fontWeight: '600',
     color: '#8B8A9B',
+    flexWrap: 'wrap',
+    lineHeight: 18,
   },
   statusTextoAssistido: {
     color: '#34D399',
+    flexWrap: 'wrap',
   },
   statusTextoQuero: {
     color: '#C084FC',
+    flexWrap: 'wrap',
   },
   erro: {
     color: '#F87171',
-    marginTop: 8,
+    marginTop: 6,
   },
   btnSalvar: {
     backgroundColor: '#A855F7',
@@ -347,5 +342,6 @@ const styles = StyleSheet.create({
   btnSalvarTexto: {
     fontWeight: '800',
     color: '#FFFFFF',
+    lineHeight: 20,
   },
 });
