@@ -1,12 +1,25 @@
 // components/BadgeStatus.js
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 
 export default function BadgeStatus({ status }) {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 380;
   const assistido = status === 'Assistido';
+
   return (
-    <View style={[styles.badge, assistido ? styles.bgAssistido : styles.bgQuero]}>
-      <Text style={[styles.texto, assistido ? styles.corAssistido : styles.corQuero]}>
+    <View
+      style={[
+        styles.badge,
+        {
+          paddingHorizontal: isSmallScreen ? 8 : 10,
+          paddingVertical: isSmallScreen ? 3 : 4,
+          minHeight: isSmallScreen ? 20 : 24,
+        },
+        assistido ? styles.bgAssistido : styles.bgQuero,
+      ]}
+    >
+      <Text style={[styles.texto, { fontSize: isSmallScreen ? 10 : 11 }, assistido ? styles.corAssistido : styles.corQuero]}>
         {status}
       </Text>
     </View>
@@ -15,10 +28,10 @@ export default function BadgeStatus({ status }) {
 
 const styles = StyleSheet.create({
   badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
     borderRadius: 12,
     alignSelf: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bgAssistido: {
     backgroundColor: '#16302A',
@@ -27,8 +40,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#2A2030',
   },
   texto: {
-    fontSize: 11,
     fontWeight: '700',
+    lineHeight: 14,
   },
   corAssistido: {
     color: '#34D399',
