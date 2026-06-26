@@ -117,6 +117,7 @@ export default function TelaFormulario({ route, navigation }) {
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
       >
         <CampoTexto
           label="Título"
@@ -248,6 +249,7 @@ const styles = StyleSheet.create({
   voltarTexto: {
     fontWeight: '600',
     color: '#C084FC',
+    lineHeight: 18,
   },
   topbarTitulo: {
     fontWeight: '700',
@@ -265,6 +267,7 @@ const styles = StyleSheet.create({
   },
   metade: {
     flex: 1,
+    minWidth: 0,
   },
   label: {
     fontWeight: '700',
@@ -328,12 +331,16 @@ const styles = StyleSheet.create({
   statusTexto: {
     fontWeight: '600',
     color: '#8B8A9B',
+    flexWrap: 'wrap',
+    lineHeight: 18,
   },
   statusTextoAssistido: {
     color: '#34D399',
+    flexWrap: 'wrap',
   },
   statusTextoQuero: {
     color: '#C084FC',
+    flexWrap: 'wrap',
   },
   erro: {
     color: '#F87171',
@@ -349,5 +356,6 @@ const styles = StyleSheet.create({
   btnSalvarTexto: {
     fontWeight: '800',
     color: '#FFFFFF',
+    lineHeight: 20,
   },
 });

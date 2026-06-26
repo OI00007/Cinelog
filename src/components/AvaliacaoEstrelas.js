@@ -69,6 +69,6 @@ const styles = StyleSheet.create({
     color: '#FBBF24',
   },
   off: {
-    color: '#3F3F46', // AJUSTADO MANUALMENTE: Cor cinza zinco um pouco mais clara que o fundo para ser visível mas discreta
+    color: '#2A2A33',
   },
 });
